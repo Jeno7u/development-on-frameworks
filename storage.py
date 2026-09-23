@@ -17,16 +17,42 @@ def _ensure_data_dir() -> None:
         os.makedirs(DATA_DIR)
 
 
-def load_equipment() -> List[Equipment]:
-    """Загрузить оборудование из JSON в объекты Equipment."""
-    if not os.path.exists(EQUIPMENT_FILE):
-        return []
+def _read_json(path: str):
+    """Прочитать JSON-файл, вернуть None при ошибке."""
+    if not os.path.exists(path):
+        return None
     try:
-        with open(EQUIPMENT_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return [Equipment.from_data(item) for item in data]
-    except (json.JSONDecodeError, OSError, KeyError):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def load_equipment() -> List[Equipment]:
+    """Загрузить оборудование из JSON в объекты Equipment.
+
+    Поддерживает оба формата: список (ПР3) и словарь (ПР2).
+    """
+    raw = _read_json(EQUIPMENT_FILE)
+    if raw is None:
         return []
+
+    if isinstance(raw, dict):
+        items = list(raw.values())
+    elif isinstance(raw, list):
+        items = raw
+    else:
+        return []
+
+    result: List[Equipment] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            result.append(Equipment.from_data(item))
+        except (KeyError, TypeError):
+            continue
+    return result
 
 
 def save_equipment(equipment_list: List[Equipment]) -> None:
@@ -48,14 +74,26 @@ def save_equipment(equipment_list: List[Equipment]) -> None:
 
 def load_employees() -> List[Employee]:
     """Загрузить сотрудников из JSON в объекты Employee."""
-    if not os.path.exists(EMPLOYEES_FILE):
+    raw = _read_json(EMPLOYEES_FILE)
+    if raw is None:
         return []
-    try:
-        with open(EMPLOYEES_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return [Employee.from_data(item) for item in data]
-    except (json.JSONDecodeError, OSError, KeyError):
+
+    if isinstance(raw, dict):
+        items = list(raw.values())
+    elif isinstance(raw, list):
+        items = raw
+    else:
         return []
+
+    result: List[Employee] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            result.append(Employee.from_data(item))
+        except (KeyError, TypeError):
+            continue
+    return result
 
 
 def save_employees(employees: List[Employee]) -> None:
@@ -77,17 +115,43 @@ def load_issuances(
     equipment_list: List[Equipment],
     employees: List[Employee],
 ) -> List[Issuance]:
-    """Загрузить выдачи из JSON, восстановив связи объектов."""
-    if not os.path.exists(ISSUANCES_FILE):
+    """Загрузить выдачи из JSON, восстановив связи объектов.
+
+    Поддерживает форматы ПР2 (employee, date) и ПР3
+    (employee_id, issue_date).
+    """
+    raw = _read_json(ISSUANCES_FILE)
+    if raw is None:
         return []
-    try:
-        with open(ISSUANCES_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, OSError):
+
+    if isinstance(raw, dict):
+        items = list(raw.values())
+    elif isinstance(raw, list):
+        items = raw
+    else:
         return []
 
     result: List[Issuance] = []
-    for item in data:
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+
+        # Нормализация полей ПР2 -> ПР3
+        if "employee_id" not in item and "employee" in item:
+            # В ПР2 "employee" — это ФИО, ищем по имени
+            employee_name = item.get("employee")
+            matched = None
+            for emp in employees:
+                if emp.name == employee_name:
+                    matched = emp
+                    break
+            if matched is None:
+                continue
+            item["employee_id"] = matched.id
+
+        if "issue_date" not in item and "date" in item:
+            item["issue_date"] = item["date"]
+
         issuance = Issuance.from_data(
             item, equipment_list, employees
         )

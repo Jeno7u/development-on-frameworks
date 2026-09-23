@@ -11,7 +11,6 @@ from models.equipment import (
 )
 from models.employees import (
     add_employee,
-    find_employee,
     find_employee_by_id,
     show_employees,
 )
