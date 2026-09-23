@@ -1,6 +1,6 @@
 # Импорт модуля (требование ПР1)
 from datetime import date
-
+ 
 # Функция 1: Проверка доступности оборудования
 def check_availability(available):
     if available:
