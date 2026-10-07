@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "id": 1,
+    "name": "Ноутбук Lenovo ThinkPad",
+    "inventory_number": 10001,
+    "status": "Рабочее",
+    "is_available": false
+  },
+  {
+    "id": 2,
+    "name": "Монитор Dell 24",
+    "inventory_number": 10002,
+    "status": "Рабочее",
+    "is_available": true
+  },
+  {
+    "id": 3,
+    "name": "Принтер HP LaserJet",
+    "inventory_number": 10003,
+    "status": "Ремонт",
+    "is_available": true
+  }
+]

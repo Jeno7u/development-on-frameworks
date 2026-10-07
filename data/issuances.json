@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "id": 1,
+    "equipment_id": 1,
+    "employee_id": 1,
+    "issue_date": "2026-09-15",
+    "is_returned": false
+  },
+  {
+    "id": 2,
+    "equipment_id": 2,
+    "employee_id": 2,
+    "issue_date": "2026-09-01",
+    "is_returned": true
+  }
+]
